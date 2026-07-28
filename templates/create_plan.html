@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% block title %}Create Plan{% endblock %}
+
+{% block content %}
+<h1>Create Plan</h1>
+
+<form method="POST" action="{{ url_for('create_plan') }}">
+  <div class="form-group">
+    <label for="name">Plan Name</label>
+    <input type="text" class="form-control" name="name" id="name" placeholder="Enter Plan Name">
+  </div>
+  <button type="submit" class="btn btn-primary">Create</button>
+</form>
+{% endblock %}

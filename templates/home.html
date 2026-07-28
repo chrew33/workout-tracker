@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% block title %}Home{% endblock %}
+
+{% block content %}
+  <h1>Home</h1>
+
+<div class="card" style="width: 18rem;">
+  <div class="card-body">
+    <h5 class="card-subtitle mb-2 text-muted">Instructions</h6>
+    <p class="card-text">
+      Simply Press your workouts to view your workouts.
+      Press "Create A Workout Plan" to create a new workout.
+      Or, Press "Edit" to edit an existing workout.
+    </p>
+  </div>
+</div> 
+
+<a href="{{ url_for('create_plan') }}">
+  <button>Create A Workout Plan</button>
+</a>
+
+
+<div>
+  <h3>Your Workout Plans</h3>
+  <div>
+    <ul class="list-group">
+      {% for plan in plans %}
+        <li class="list-group-item">
+          <a href="{{ url_for('view_plan', plan_id=plan.id) }}" class="card-title-link">
+            <h5>{{ plan.name }}</h5>
+          </a>
+          <a href="{{ url_for('edit_plan', plan_id=plan.id) }}">
+            <button>Edit</button>
+          </a>
+        </li>
+      {% else %}
+        <li class="list-group-item">You don't have any workout plans yet. Create one to get started!</li>
+      {% endfor %}
+    </ul>
+  </div>
+</div>
+{% endblock %}

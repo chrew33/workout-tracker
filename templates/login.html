@@ -1,0 +1,38 @@
+{% extends "nologbase.html" %}
+
+{% block content %}
+<div class="auth-container">
+  <h1>Login</h1>
+ 
+  <form method="POST" action="{{ url_for('login') }}">
+    <div class="form-group">
+      <label for="username">Username</label>
+      <input type="text" class="form-control" id="username" name="username" aria-describedby="usernameHelp" placeholder="Enter username" required>
+    </div>
+    <div class="form-group">
+      <label for="password">Password</label>
+      <input type="password" class="form-control" id="password" name="password" placeholder="Password" required>
+    </div>
+    <button type="submit" class="btn btn-primary">Submit</button>
+  </form>
+
+  <div class="card" style="width: 18rem;">
+    <div class="card-body">
+      <h5 class="card-title">If not a member yet</h5>
+      <a class="btn btn-primary" href="{{ url_for('register') }}" role="button">Sign up?</a>
+    </div>
+  </div>
+
+  <div class="card" style="width: 18rem;">
+    <div class="card-body">
+      <h6 class="card-subtitle mb-2 text-muted">Never lose track of a workout.</h6>
+      <h6 class="card-subtitle mb-2 text-muted">Never guess what to do.</h6>
+      <h6 class="card-subtitle mb-2 text-muted">Never stop improving.</h6>
+      <p class="card-text">This app is meant to track your workouts digitally 
+        so that you don't have to fear losing them. Once workouts are tracked, 
+        you will be able to analyze your history.</p>
+    </div>
+  </div>  
+  
+</div>
+{% endblock %}
