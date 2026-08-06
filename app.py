@@ -2,7 +2,7 @@ from flask import Flask, render_template, request, redirect, url_for, flash, abo
 from extensions import db
 from models import User, WorkoutPlan, Exercise
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user
-
+import requests
 
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///tracker.db'
@@ -26,19 +26,26 @@ with app.app_context():
 
 @app.route('/', methods=['GET', 'POST'])
 def login():
+    
     if current_user.is_authenticated:
         return redirect(url_for('home'))
 
     if request.method == 'POST':
+        
         username = request.form['username']
         password = request.form['password']
+        
+        data = {"username": username,
+                "password": password}
+        
+        response = requests.post("http://localhost:5555/login",json=data)
 
-        user = User.query.filter_by(username=username).first()
-
-        if user and user.password == password:
+        if response.status_code == 200:
+            user = User.query.filter_by(username=username).first()
             login_user(user)
             return redirect(url_for('home'))
-        else:
+        
+        elif response.status_code == 401:
             flash('Invalid username or password.')
             return redirect(url_for('login'))
 
@@ -58,19 +65,31 @@ def register():
         username = request.form['username']
         password = request.form['password']
 
-        # check if this username already exists
-        existing_user = User.query.filter_by(username=username).first()
-        if existing_user:
+        # checks if register is possible by HTTP request to login microservice
+        data = {
+            "username":username,
+            "password":password
+        }
+        
+        # This uses the login microservice!!!!
+        response = requests.post("http://localhost:5555/register",json=data)
+        
+        if response.status_code == 409:
             flash('Username already exists. Please choose another.')
             return redirect(url_for('register'))
 
-        new_user = User(username=username, password=password)
+        elif response.status_code == 201:
+            new_user = User(username=username, password=password)
 
-        db.session.add(new_user)
-        db.session.commit()
+            db.session.add(new_user)
+            db.session.commit()
 
-        flash('Account created! Please log in.')
-        return redirect(url_for('login'))
+            flash('Account created! Please log in.')
+            return redirect(url_for('login'))
+
+        else:
+            flash(f'Something went wrong please try again. Error code: {response.status_code}')
+            return redirect(url_for('register'))
 
     return render_template('register.html')
 
@@ -134,15 +153,16 @@ def add_exercise(plan_id):
         abort(403)
 
     name = request.form.get('exercise_name')
+    weights = request.form.get('exercise_weights')
     sets = request.form.get('exercise_sets')
     reps = request.form.get('exercise_reps')
 
     if name and sets and reps:
-        exercise = Exercise(name=name, sets=int(sets), reps=int(reps), workout_plan_id=plan.id)
+        exercise = Exercise(name=name, weights=float(weights) ,sets=int(sets), reps=int(reps), workout_plan_id=plan.id)
         db.session.add(exercise)
         db.session.commit()
     else:
-        flash('Please fill in exercise, sets, and reps.')
+        flash('Please fill in exercise, weights, sets, and reps.')
 
     return redirect(url_for('edit_plan', plan_id=plan.id))
 
@@ -177,10 +197,25 @@ def delete_plan(plan_id):
     flash('Plan deleted.')
     return redirect(url_for('home'))
 
+@app.route('/analyze', methods=['GET'])
+@login_required
+def analyze_user():
+    plans = current_user.workout_plans
+    for plan in plans:
+        total_volume = 0
+        for exercise in plan.exercises:
+            # this portion is where I can use math microservice
+            total_volume = exercise.weights * exercise.sets * exercise.reps
+        plan.volume = int(total_volume)
+        db.session.commit()
+    
+    return render_template('analyze.html', plans=plans)
+
+
 @app.route('/help')
 @login_required
 def help():
     return render_template('help.html')
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(port=5000, debug=True)

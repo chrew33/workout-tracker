@@ -15,6 +15,7 @@
 <form method="POST" action="{{ url_for('add_exercise', plan_id=plan.id) }}">
   <div>
     <input type="text" name="exercise_name" placeholder="Exercise">
+    <input type="number" name="exercise_weights" placeholder="Weights" min="0">
     <input type="number" name="exercise_sets" placeholder="Sets" min="0">
     <input type="number" name="exercise_reps" placeholder="Reps" min="0">
     <button type="submit">Add Exercise</button>
@@ -27,6 +28,7 @@
         <li class="list-group-item">
             <div>
               <input type="text" name="exercise_name" value="{{ exercise.name }}" readonly>
+              <input type="number" name="exercise_weights" value="{{ exercise.weights }}" readonly>
               <input type="number" name="exercise_sets" value="{{ exercise.sets }}" readonly>
               <input type="number" name="exercise_reps" value="{{ exercise.reps }}" readonly>
               <form method="POST" action="{{ url_for('delete_exercise', exercise_id=exercise.id) }}">

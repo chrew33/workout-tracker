@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block title %}Home{% endblock %}
+
+{% block content %}
+  <h1>Analyzing your workouts</h1>
+
+<div>
+  <h3>Your Workout Plans</h3>
+  <div>
+    <ul class="list-group">
+      {% for plan in plans %}
+        <li class="list-group-item">
+          <a href="{{ url_for('view_plan', plan_id=plan.id) }}" class="card-title-link">
+            <h3>{{ plan.name }}</h3>
+          </a>
+          <h5> Total Volume: {{plan.volume}} </h5>
+        </li>
+      {% else %}
+        <li class="list-group-item">You don't have any workout plans yet. Create one to see the analysis!</li>
+      {% endfor %}
+    </ul>
+  </div>
+</div>
+{% endblock %}

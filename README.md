@@ -15,3 +15,9 @@ Quick re-fresh tutorial on how to use flask and flask-sqlalchemy:
 https://www.youtube.com/watch?v=mqhxxeeTbu0&list=PLzMcBGfZo4-n4vJJybUVV3Un_NFS5EOgX
 
 
+# Before starting this microservice
+
+You need to have the associated microservices ready:
+login-service
+basic-math-service
+sign-up-validator-service
