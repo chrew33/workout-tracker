@@ -18,6 +18,7 @@ https://www.youtube.com/watch?v=mqhxxeeTbu0&list=PLzMcBGfZo4-n4vJJybUVV3Un_NFS5E
 # Before starting this microservice
 
 You need to have the associated microservices ready:
-login-service
-basic-math-service
-sign-up-validator-service
+login-service (small pool)
+basic-math-service (big pool)
+sign-up-validator-service (big pool)
+quote-service (big pool) 

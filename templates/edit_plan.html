@@ -16,6 +16,10 @@
   <div>
     <input type="text" name="exercise_name" placeholder="Exercise">
     <input type="number" name="exercise_weights" placeholder="Weights" min="0">
+    <select name="exercise_metric">
+      <option value="kg">kg</option>
+      <option value="lb">lb</option>
+    </select>
     <input type="number" name="exercise_sets" placeholder="Sets" min="0">
     <input type="number" name="exercise_reps" placeholder="Reps" min="0">
     <button type="submit">Add Exercise</button>
@@ -29,6 +33,7 @@
             <div>
               <input type="text" name="exercise_name" value="{{ exercise.name }}" readonly>
               <input type="number" name="exercise_weights" value="{{ exercise.weights }}" readonly>
+              <input type="text" name="exercise_metric" value="{{ exercise.metric }}" readonly>
               <input type="number" name="exercise_sets" value="{{ exercise.sets }}" readonly>
               <input type="number" name="exercise_reps" value="{{ exercise.reps }}" readonly>
               <form method="POST" action="{{ url_for('delete_exercise', exercise_id=exercise.id) }}">

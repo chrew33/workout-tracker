@@ -38,6 +38,7 @@ def login():
         data = {"username": username,
                 "password": password}
         
+        # THIS IS USING THE login-service MICROSERVICE (SMALL POOL)
         response = requests.post("http://localhost:5555/login",json=data)
 
         if response.status_code == 200:
@@ -65,30 +66,43 @@ def register():
         username = request.form['username']
         password = request.form['password']
 
-        # checks if register is possible by HTTP request to login microservice
         data = {
             "username":username,
             "password":password
         }
         
-        # This uses the login microservice!!!!
-        response = requests.post("http://localhost:5555/register",json=data)
+        # THIS IS USING THE signup-valid-service MICROSERVICE (Big POOL #1) ####################
+        response_validate = requests.post("http://localhost:6060/validate",json=data)
+    
+        # checks if register is possible by HTTP request to login microservice
+        if response_validate.status_code == 200:
+            
+            # THIS IS USING THE login-service MICROSERVICE (SMALL POOL) ########################
+            response_register = requests.post("http://localhost:5555/register",json=data)
+            
+            if response_register.status_code == 409:
+                flash('Username already exists. Please choose another.')
+                return redirect(url_for('register'))
+
+            elif response_register.status_code == 201:
+                new_user = User(username=username, password=password)
+
+                db.session.add(new_user)
+                db.session.commit()
+
+                flash('Account created! Please log in.')
+                return redirect(url_for('login'))
+
+            else:
+                flash(f'Something went wrong please try again. Error code: {response_register.status_code}')
+                return redirect(url_for('register'))
         
-        if response.status_code == 409:
-            flash('Username already exists. Please choose another.')
-            return redirect(url_for('register'))
-
-        elif response.status_code == 201:
-            new_user = User(username=username, password=password)
-
-            db.session.add(new_user)
-            db.session.commit()
-
-            flash('Account created! Please log in.')
-            return redirect(url_for('login'))
-
+        # This is when the validation did not work and responseValidate.status_code is 400 or other
         else:
-            flash(f'Something went wrong please try again. Error code: {response.status_code}')
+            data = response_validate.json()
+            messages = data["messages"]
+            for message in messages:
+                flash(f'Invalid Username and Password: {message}')
             return redirect(url_for('register'))
 
     return render_template('register.html')
@@ -97,8 +111,19 @@ def register():
 @app.route('/home')
 @login_required
 def home():
-    plans = current_user.workout_plans
-    return render_template('home.html', plans=plans)
+    
+    # THIS IS USING THE quote-service MICROSERVICE (Big POOL #2) ###################
+    response = requests.get("http://localhost:5010/quote")
+    
+    quoteData = response.json()
+    
+    if response.status_code == 200:
+        plans = current_user.workout_plans
+        return render_template('home.html', plans=plans, quote=quoteData["quote"], author=quoteData["author"])
+    
+    else:
+        plans = current_user.workout_plans
+        return render_template('home.html', plans=plans)
 
 
 @app.route('/plan/<int:plan_id>')
@@ -154,15 +179,16 @@ def add_exercise(plan_id):
 
     name = request.form.get('exercise_name')
     weights = request.form.get('exercise_weights')
+    metric = request.form.get('exercise_metric')
     sets = request.form.get('exercise_sets')
     reps = request.form.get('exercise_reps')
 
     if name and sets and reps:
-        exercise = Exercise(name=name, weights=float(weights) ,sets=int(sets), reps=int(reps), workout_plan_id=plan.id)
+        exercise = Exercise(name=name, weights=float(weights), metric=metric, sets=int(sets), reps=int(reps), workout_plan_id=plan.id)
         db.session.add(exercise)
         db.session.commit()
     else:
-        flash('Please fill in exercise, weights, sets, and reps.')
+        flash('Please fill in exercise, weights, metric, sets, and reps.')
 
     return redirect(url_for('edit_plan', plan_id=plan.id))
 
@@ -204,8 +230,40 @@ def analyze_user():
     for plan in plans:
         total_volume = 0
         for exercise in plan.exercises:
-            # this portion is where I can use math microservice
-            total_volume = exercise.weights * exercise.sets * exercise.reps
+            
+            # standardize everything to kg (convert all lbs to kg)
+            if exercise.metric == "lb":
+                convertData = {
+                        "unit": "lb",
+                        "value": float(exercise.weights)
+                }
+                
+                # THIS IS USING THE unit-conversion-service MICROSERVICE (Big POOL #3) #######################
+                convertResponse = requests.get('http://127.0.0.1:5000/weight', json=convertData)
+                convertResponseData = convertResponse.json()
+                weightsInKg = convertResponseData["result"]
+                
+                data ={
+                    "operator": "multiplication",
+                    "values": [float(weightsInKg), exercise.sets, exercise.reps]
+                }
+            else: 
+                data ={
+                    "operator": "multiplication",
+                    "values": [float(exercise.weights), exercise.sets, exercise.reps]
+                }
+            
+            # THIS IS USING THE basic-math-service MICROSERVICE (Big POOL #4) #######################
+            response = requests.post("http://localhost:5050/api/math",json=data)
+            
+            if response.status_code == 200:
+                responseData = response.json()
+                total_volume += responseData["result"]
+            else:
+                responseData = response.json()
+                # this error is mainly for the developer
+                print(f"{responseData["error"]}")
+                
         plan.volume = int(total_volume)
         db.session.commit()
     
@@ -218,4 +276,4 @@ def help():
     return render_template('help.html')
 
 if __name__ == '__main__':
-    app.run(port=5000, debug=True)
+    app.run(port=5432, debug=True)
